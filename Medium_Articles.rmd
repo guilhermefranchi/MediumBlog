@@ -11,19 +11,6 @@ output:
     toc: yes
 ---
 
-`---
-title: "List of articles posted on Medium (https://medium.com/@amorimfranchi)"
-author: "Guilherme Franchi"
-date: "last update - November 22, 2023"
-output:
-  bookdown::word_document2:
-    fig_caption: yes
-    section_number: yes
-    number_sections: yes
-    global_numbering: yes
-    toc: yes
-         
----
 
 ```{r setup, include=FALSE}
 # Make some choices depending on who is running the script and which dataset you want to process
