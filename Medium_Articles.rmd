@@ -1,0 +1,335 @@
+---
+title: "List of articles posted on Medium (https://medium.com/@amorimfranchi)"
+author: "Guilherme Franchi"
+date: "last update - November 22, 2023"
+output:
+  bookdown::word_document2:
+    fig_caption: yes
+    section_number: yes
+    number_sections: yes
+    global_numbering: yes
+    toc: yes
+---
+
+`---
+title: "List of articles posted on Medium (https://medium.com/@amorimfranchi)"
+author: "Guilherme Franchi"
+date: "last update - November 22, 2023"
+output:
+  bookdown::word_document2:
+    fig_caption: yes
+    section_number: yes
+    number_sections: yes
+    global_numbering: yes
+    toc: yes
+         
+---
+
+```{r setup, include=FALSE}
+# Make some choices depending on who is running the script and which dataset you want to process
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      include = FALSE,
+                      cache= F,
+                      fig.height=6,
+                      fig.width=8,
+                      out.width="100%")
+
+```
+
+# Nov 17, 2023 - Raincloud plots for clear, precise and efficient data communication
+
+Raw data visualization involves presenting data in its most basic form, without any manipulation or aggregation, and is fundamental for initial understanding and quality assessment of your data.
+
+Specifically, raw data visualization allows for:
+
+* Initial Exploration: It helps in the initial exploration of data, permitting us to get a sense of the patterns, outliers, and overall characteristics present in the raw dataset.
+
+* Identifying Anomalies: Raw data visualization allows for the quick identification of anomalies, outliers, or errors in the dataset, which might need further investigation or cleaning.
+
+* Understanding Data Distribution: It provides a clear understanding of the distribution of the data points, helping us comprehend the nature and spread of the dataset.
+
+* Data Quality Assessment: By visualizing raw data, it is easier to assess the quality of the dataset, including missing values, inconsistencies, or inaccuracies.
+
+* Contextual Understanding: Visualizing raw data aids in understanding the context in which the data was collected, helping in making informed decisions about the appropriate data preprocessing steps.
+
+* Enhanced Communication: When collaborating with others, presenting raw data visually can facilitate better communication among team members, allowing everyone to start from the same foundational view.
+
+Typically, (raw) data and summary statistics are presented through boxplots, including in scientific manuscripts and presentations.
+
+Although they permit combination of many summary statistics in one chart, they may still mislead readers by not providing a clue of the sample size or underlying patterns in the data.
+
+Even if one includes the individual data points into the boxplot, it can be clustered and not helping us see the where these points lie on.
+
+```{r data-load-Nov17, include=T}
+pacman::p_load(agridat, readxl, tidyr, tidyverse, dplyr, tibble, flextable, officer,
+               doBy, FSA, DataExplorer, skimr, SmartEDA,
+              ggplot2, ggpubr, ghibli, ggdist, GGally, patchwork, ggiraph,
+              crosstalk, plotly, DT, patchwork)
+
+data <- agridat::ilri.sheep
+
+data <- data |> mutate(year=as.factor(year),
+                       lamb=as.factor(lamb),
+                       birthwt=as.numeric(birthwt),
+                       weanwt=as.numeric(weanwt),
+                       weanage=as.numeric(weanage),
+                       weight_gain_gram=as.numeric(round((((weanwt-birthwt)/weanage)*1000),2),na.rm=T))
+
+data <- subset(data, select=c(lamb,gen,weight_gain_gram))
+
+```
+
+
+(ref:bad-plot) Example of a “not-so-good” illustration of data and summary statistics. Data was retrieved from dataframe “ilri.sheep” (Baker et al., 2003; https://doi.org/10.1017/S1357729800053388) located in the R library agridat v.1.22 (Wright, 2023).
+
+```{r bad-plot, include=T, fig.cap="(ref:bad-plot)"}
+bad.plot <- ggplot(data, aes(x = gen, y = weight_gain_gram, fill=gen)) +
+  scale_fill_ghibli_d("SpiritedMedium", direction = -1) +
+  geom_boxplot(width = 0.5) +
+  xlab('Lamb genotype') + ylab('Weight gain, in g/d') +
+  ggtitle("Weight gain from birth to weaning in 4 lamb genotypes") +
+  theme_classic(base_size=18, base_family="serif")+
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle=0, hjust=.5, vjust = 0.5, color = "black"),
+        axis.text.y = element_text(color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.position="none")+
+  scale_y_continuous(breaks = seq(0, 180, by=20), limits=c(0,180), expand = c(0, 0))+
+  geom_jitter(position=position_dodge(0.8))
+
+bad.plot
+```
+
+
+Alternatively, a raincloud plot, which is a hybrid plot mixing a halved violin plot, a box plot, and scattered raw data, can help us visualize raw data, the distribution of the data, and key summary statistics at the same time.
+
+The raincloud plot improves upon the traditional box plot by emphasizing multiple modes, indicating the potential existence of different groups within the data.
+
+Unlike the box plot, which does not reveal where densities gather, the raincloud plot does precisely that!
+
+Now it is your turn. Check out this simple raincloud plot tutorial using the R library ggdist v.3.3.0 (Kay, 2023; https://mjskay.github.io/ggdist/).
+
+
+1. Load library and data
+```{r data-head, include=T}
+head(data,10) #shows the first 10 rows only
+```
+
+2. Plotting the raincloud using ggplot2 and ggdist
+
+(ref:good-plot) Raincloud plot illustrating illustration of data and summary statistics. Data was retrieved from dataframe “ilri.sheep” (Baker et al., 2003; https://doi.org/10.1017/S1357729800053388) located in the R library agridat v.1.22 (Wright, 2023).
+
+```{r good-plot, include=T, fig.cap="(ref:good-plot)"}
+raincloud <- ggplot(data, aes(x = gen, y = weight_gain_gram, fill=gen)) +
+  scale_fill_ghibli_d("SpiritedMedium", direction = -1) +
+  geom_boxplot(width = 0.1) +
+  xlab('Lamb genotype') + ylab('Weight gain, in g/d') +
+  ggtitle("Weight gain from birth to weaning in 4 lamb genotypes") +
+  theme_classic(base_size=18, base_family="serif")+
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle=0, hjust=.5, vjust = 0.5, color = "black"),
+        axis.text.y = element_text(color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.position="none")+
+  scale_y_continuous(breaks = seq(0, 180, by=20), limits=c(0,180), expand = c(0, 0))+
+  stat_dots(side = "left", justification = 1.12, binwidth = 1.9) +
+  stat_halfeye(adjust = .5, width = .6, justification = -.2, .width = 0, point_colour = NA)
+
+raincloud
+```
+
+```{r remove-data-Nov17, include=T}
+rm(data)
+```
+
+You just learned how to make a raincloud plot with R libraries ggplot2 and ggdist! Congrats!
+
+Stay tuned for more data visualization posts as well as more content on statistical programming and data analysis.
+
+Cheers!
+
+Guilherme
+
+\newpage
+
+# Nov 22, 2023 - Exploratory data analysis with few-line code? Yes, you can!
+
+Exploratory Data Analysis (EDA) is a fundamental step before starting any statistical analysis. It involves summarizing the main characteristics of the data, often using visual methods like histograms, raincloud plots, box plots, and more, to understand the data structure, identify patterns, spot anomalies, and test hypotheses.
+
+The main reasons why EDA is relevant:
+
+* Getting to know the data: EDA helps in getting a sense of what the data looks like — its distribution, range, and features. This understanding is crucial before applying any advanced analytics or modelling;
+
+* Identifying patterns and relationships: Through EDA, you can uncover relationships between variables, correlations, trends, and potential outliers. This insight can guide further analysis and hypothesis testing;
+
+* Detecting anomalies or outliers: Exploring the data visually often reveals anomalies or outliers that might require special treatment or investigation;
+
+* Feature Selection: EDA aids in selecting the most relevant features for modeling. It helps in understanding which features might be most predictive or influential;
+
+* Data cleaning and pre-processing: EDA often highlights missing data, inconsistencies, or data quality issues that need to be addressed before further analysis;
+
+* Hypothesis generation: EDA can inspire hypotheses that can be tested formally using statistical methods.
+
+* Communicating insights: Visualizations generated during EDA are often used to communicate findings to stakeholders who might not be well-versed in the technical aspects of data analysis.
+
+Below you will find 4 different R libraries/functions to perform EDA with few code lines.
+
+## Data loading and preparation
+
+In this article, we will use the dataset "woodman.pig" (Woodman et al., 1936; https://doi.org/10.1017/S002185960002308X) from R library agridat v.1.22 (Wright, 2023).
+
+To make it simple, the following variables will be retained for EDA:
+
+* pen
+* treatment
+* pig
+* sex
+* amount of feed consumed (in pounds)
+* weekly weight gain (in pounds)
+
+```{r data-load-Nov22, include=T}
+install.packages(c("agridat","tidyr","tidyverse","dplyr"))
+
+library("agridat")
+library("tidyr")
+library("tidyverse")
+library("dplyr")
+
+data <- agridat::woodman.pig
+
+d <- data |> 
+        mutate(pen=as.factor(pen),
+               treatment=as.factor(treatment),
+               pig=as.factor(pig),
+               sex=as.factor(sex),
+               feed_consumed=as.numeric(feed),
+               weekly_weight_gain=as.numeric(g)) |>
+    select(pen,treatment,pig,sex,feed_consumed,weekly_weight_gain)
+
+head(d,5)
+```
+
+```{r rainplot, include=T, fig.cap="(ref:rainplot)"}
+ggplot(d, aes(x = treatment, y = feed_consumed)) +
+  geom_boxplot(width = 0.25) +
+  xlab('Treatment') +
+  ylab('Amount of feed consumed, in pounds') +
+  #ggtitle("Weight gain from birth to weaning in 4 lamb genotypes") +
+  theme_classic(base_size=18, base_family="serif")+
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle=0, hjust=.5, vjust = 0.5, color = "black"),
+        axis.text.y = element_text(color = "black"),
+        plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.position="none")+
+  scale_y_continuous(breaks = seq(400, 600, by=25), limits=c(400,600), expand = c(0, 0)) +
+ stat_halfeye(adjust = .5, width = .6, justification = -.3, .width = 0, point_colour = NA) +
+  geom_point(shape = 95, size = 15, alpha = .2, color = "#1D785A")
+```
+
+## Exploratory Data Analysis methods
+
+### Option 1: skimr
+
+The *skimr* is a helpful R library for EDA.
+
+It provides summary statistics and visualizations to understand the structure and characteristics of your dataset.
+
+Here are some ways to use it:
+
+install.packages("skimr")
+
+library(skimr)
+library(dplyr) # For data manipulation (optional but often used)
+
+summary.skimr <- skim(d)
+
+summary.skimr.numeric <- d |> 
+                         skim(where(is.numeric)) # Summarize only numerical variables
+
+summary.skimr.numeric.facet <- d |>
+                               dplyr::group_by(treatment) |>
+                               skim(where(is.numeric)) #Summarize numerical variables by treatment
+
+  
+### Option 2: DataExplorer
+
+The *DataExplorer* library is another useful tool in R for EDA.
+
+It provides various functions to quickly explore and visualize datasets, generate summary statistics, and handle missing values.
+
+Find some ways to use this library below:
+
+install.packages("DataExplorer")
+
+library(DataExplorer)
+library(dplyr) # For data manipulation (optional but often used)
+
+summary.de <- plot_intro(d) #provides a quick summary of the data types, missing values, and some summary statistics
+
+summary.report <- create_report(d, report_title = "Exploratory Data Analysis Report") #generates a comprehensive report with summary statistics, histograms, bar plots, correlation plots, etc., for numeric and categorical variables.
+
+summary.report.faceted <- create_report(d, report_title = "Exploratory Data Analysis Report", y = "treatment")
+
+
+### Option 3: SmartEDA
+
+The *SmartEDA* library is another powerful tool for quick data overview with increasing number of exploratory functions. Analyzing information value, weight of evidence, custom tables, summary statistics, graphical techniques will be performed for both numeric and categorical predictors.
+
+install.packages("SmartEDA")
+
+library(SmartEDA)
+
+data.overview.smarteda <-  ExpData(data=d,type=1) #overview of the data
+   
+data.strcuture.smarteda <- ExpData(data=d,type=2) #structure of the data
+
+report.smarteda <- ExpReport(d, label=NULL, op_file="Report.html", op_dir=getwd()) #generates data overview report in HTML format
+
+report.smarteda.faceted <- ExpReport(d, Target="treatment", label=NULL, op_file="Report.html", op_dir=getwd()) #generates data overview report by treatment in HTML format
+
+
+### Option 4: tableone
+
+The *tableone* library is another powerful tool primarily used for creating summary statistics tables.
+
+It is particularly useful for generating publication-ready tables that summarize characteristics of different groups within a dataset.
+
+Here is an overview of using this library for creating summary tables:
+
+install.packages("tableone")
+
+library(tableone)
+
+summary.tableone <- tableone::CreateTableOne(vars = colnames(select(d, -"treatment")), 
+                                          strata = c("treatment"), data = d)
+# print(summary.tableone)
+
+
+EDA is typically the phase where analysts or data scientists spend a considerable amount of time because it sets the stage for the entire analysis process.
+
+It helps in making informed decisions about which analysis techniques or models might be appropriate for the dataset and the problem at hand.
+
+You just learned four different ways of running an exploratory data analysis with few lines of code! Well done!
+
+As R and statistical programming evolve, new libraries and functions are being developed.
+
+So, this list is not permanent and may not even match the specific requirements of a project. 
+Therefore, you should see this article as a start point for your EDA, a way of having a quick overview of your data, and inspiration for optimization of your data preparation by combination of these methods with other EDA techniques and visualization libraries for a comprehensive analysis.
+
+If you are aware of extra R libraries and functions to perform EDA or improve the codes used above, leave a comment below! Any improvements and extra knowledge are welcome!
+
+Stay tuned for more data visualization posts as well as more content on statistical programming and data analysis.
+
+Cheers!
+
+Guilherme
+
+\newpage
+
+# Nov 29, 2023 - 
+
