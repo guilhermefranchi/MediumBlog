@@ -316,6 +316,10 @@ Cheers!
 
 Guilherme
 
+```{r remove-data-Nov22, include=T}
+rm(data, d)
+```
+
 \newpage
 
 # Nov 29, 2023 - 
