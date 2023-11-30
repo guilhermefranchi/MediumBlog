@@ -1,5 +1,5 @@
 ---
-title: "Visualizing the number of animals slaughtered for meat in the top 4 world's largest meat producers using the R library crosstalk"
+title: "Visualizing the number of animals slaughtered for meat in the top 4 world's largest meat producers using the R libraries plotly and crosstalk"
 author: "Guilherme A. Franchi"
 date: "`r Sys.Date()`"
 output:
