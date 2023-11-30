@@ -40,7 +40,7 @@ library(checkdown)
 
 # Background
 
-The R library crosstalk is an increasingly popular tool in the realm of web development, especially in the context of data analysis and visualization.
+The R libraries crosstalk and plotly are increasingly popular tools in the realm of web development, especially in the context of data visualization.
 
 Crosstalk is a JavaScript library for two-way data binding between widgets in HTML, making it easier to create coordinated, interactive visualizations.
 
@@ -58,7 +58,13 @@ The main advantages of crosstalk are:
 
 * JavaScript-Based Requirements: crosstalk is useful when working within a JavaScript-focused environment or when needing specific interactions that are more efficiently handled with JavaScript.
 
-In today's post, we will practice the R library crosstalk using a dataset on number of animals slaughtered for meat worldwide retrieved from the website "Our World in Data" (https://ourworldindata.org/animal-welfare). For the sake of simplification, we will retain the top 3 world's largest meat producers in 2021.
+Meanwhile, plotly is an open-source graphing library available in various programming languages, including R.
+
+It is used for creating interactive and dynamic visualizations in R.
+
+Plotly allows users to generate a wide range of plots and charts, including scatter plots, line charts, bar charts, heatmaps, 3D plots, and more.
+
+In today's post, we will practice the R libraries crosstalk and plotly using a dataset on number of animals slaughtered for meat worldwide retrieved from the website "Our World in Data" (https://ourworldindata.org/animal-welfare). For the sake of simplification, we will retain the top 3 world's largest meat producers in 2021.
 
 Therefore, we will practice the following skills:
 
