@@ -1,0 +1,244 @@
+---
+title: "Visualizing the number of animals slaughtered for meat in the top 4 world's largest meat producers using the R library crosstalk"
+author: "Guilherme A. Franchi"
+date: "`r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    fig_caption: yes
+    section_number: yes
+    number_sections: yes
+    global_numbering: yes
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+# Make some choices depending on who is running the script and which dataset you want to process
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
+                      message = FALSE,
+                      error = FALSE,
+                      out.width = "100%")
+
+knitr::opts_knit$set(root.dir = "C:/Users/au588902/OneDrive - Aarhus universitet/Desktop/")
+
+```
+
+```{r pkg-load}
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(rvest)
+library(flextable)
+library(officer)
+library(skimr)
+library(ggplot2)
+library(plotly)
+library(DT)
+library(crosstalk)
+library(checkdown)
+```
+
+# Background
+
+The R library crosstalk is an increasingly popular tool in the realm of web development, especially in the context of data analysis and visualization.
+
+Crosstalk is a JavaScript library for two-way data binding between widgets in HTML, making it easier to create coordinated, interactive visualizations.
+
+Furthermore, crosstalk facilitates synchronization and communication between different HTML widgets or visualizations, ensuring that interactions in one widget affect others.
+
+This library is often used by web developers and data analysts who want to create interactive visualizations that are synchronized across multiple components.
+
+The main advantages of crosstalk are:
+
+* Integration Flexibility: crosstalk is beneficial when you wish to integrate interactive features across different JavaScript-based visualization libraries or HTML widgets seamlessly. Moreover, crosstalk can be used within Shiny applications to enhance interactivity between different visual elements;
+
+* Coordinated Interactivity: crosstalk is suitable for scenarios where you have multiple visualizations or components that need to be synchronized based on user interactions. For instance, when selecting a data point in one plot should simultaneously highlight or update information in another;
+
+* Collaborative Dashboards: crosstalk is applicable when you need to build interactive dashboards where user interactions across different elements (like plots, tables, maps) should influence each other dynamically;
+
+* JavaScript-Based Requirements: crosstalk is useful when working within a JavaScript-focused environment or when needing specific interactions that are more efficiently handled with JavaScript.
+
+In today's post, we will practice the R library crosstalk using a dataset on number of animals slaughtered for meat worldwide retrieved from the website "Our World in Data" (https://ourworldindata.org/animal-welfare). For the sake of simplification, we will retain the top 3 world's largest meat producers in 2021 and European Union.
+
+Therefore, we will practice the following skills:
+
+1. Web scraping
+2. Data processing (filtering, grouping, mutating, merging)
+3. Data summary and table creation
+4. Interactive table and plot creation using crosstalk
+5. Data visualization
+
+
+# Data preparation
+
+## Web scraping
+
+```{r web-scraping}
+
+#Top 3 meat producers
+wiki.url <- 'https://en.wikipedia.org/wiki/List_of_countries_by_meat_production'
+
+wiki.table <- read_html(wiki.url) |> html_table()
+
+country.table <- wiki.table[[1]]
+country.table
+
+selected.countries <- unique(country.table$Country)[1:3]
+
+#EU members
+eu.wiki.url <- 'https://en.wikipedia.org/wiki/Member_state_of_the_European_Union'
+
+eu.table <- read_html(eu.wiki.url) |> html_table()
+
+eu.country.table <- eu.table[[3]]
+eu.country.table
+
+eu.members <- unique(eu.country.table$Country)[1:27]
+
+
+```
+
+First, we search for the ranking of world's largest meat producers. This can be found on https://en.wikipedia.org/wiki/List_of_countries_by_meat_production.
+
+And with that we can start retrieving the data from the selected table.
+
+Initially, all tables present in the webpage will be listed in R.
+
+We then just need to select the table we need.
+
+Thereafter, we can retrieve the names of the top 3 meat producers (`r selected.countries`) and include them into a vector, which will be used to filter the observations we will use further in this exercise.
+
+Additionally, the European Union can be added as a block country and list of current European Union members can be found here: https://en.wikipedia.org/wiki/Member_state_of_the_European_Union.
+
+The process of retrieving the table and creating a vector with the 27 member states (`r eu.members`) follows the same steps described above for the top 3 meat producers.
+
+
+## Data loading, preparation, and summary
+
+The data on the number of land animals slaughtered for meat per year between 1961 and 2021 was previously downloaded as csv. format from the "Our World in Data" website (https://ourworldindata.org/animal-welfare).
+
+After uploading it in R, the observations from the 3 selected countries were filtered out in one sub-dataset and the EU member states were filtered out in another sub-dataset and observations across countries were summed per year.
+
+Thereafter, both sub-datasets were merged into one dataset "data" with 244 yearly observations.
+
+Then, the yearly average number of land animals slaughtered was calculated using the R library skimr and displayed in Table \@ref(tab:summary-table) using the R library flextable.
+
+```{r data loading and preparation}
+
+setwd("C:/Users/au588902/Dropbox/Medium/")
+
+d <- read_csv("animal-welfare.csv")
+
+# Top 3 meat producers
+d1 <- d %>% filter(Entity %in% selected.countries)
+colnames(d1) <- c("country","code","year","no. animals slaughtered")
+d1 <- d1 |> mutate(country=as.factor(country),
+                   code=as.factor(code),
+                   year=as.factor(year),
+                `no. animals slaughtered`=as.numeric(`no. animals slaughtered`))
+
+# EU members
+d2 <- d %>% filter(Entity %in% eu.members)
+colnames(d2) <- c("country","code","year","no. animals slaughtered")
+d2 <- d2 |> group_by(year) |> dplyr::summarise(`no. animals slaughtered` = sum(`no. animals slaughtered`)) |> mutate(country=as.factor("European Union"),
+                          code=as.factor("EU"))
+
+#Merging sub-datasets
+data <- rbind(d1, d2)
+
+```
+
+```{r summary-table, include=T}
+summary <- data |> group_by(country) |> skim(where(is.numeric))
+
+summary <- summary[,c(3, 6)]
+
+colnames(summary) <- c("Country", "Average")
+
+summary <- summary[order(summary$Average, decreasing = TRUE), ] #ordering countries in descending order
+
+summary.table <- flextable(summary) %>%
+  autofit() %>%
+  border_outer(border=fp_border(color="black", width=1.5)) %>%
+  bg(i = 1, j = 1:2, bg = "black", part = "header") %>%
+  color(part="header", i = 1, j = 1:2, color="white") %>%
+  bg(part="body", i=c(1,3), bg="grey80") %>%
+  align(align = "center", part = "header") %>%
+  align(align = "center", part = "body") %>%
+  set_caption(caption = "Yearly average number of animal slaughtered in the world's top 4 meat producers between 1961 and 2021.")
+
+summary.table
+```
+
+# Creating a crosstalk app including interactive table and plot
+
+Our crosstalk app contains:
+
+1. Selection boxes for "country" and "year" helping you filtering desired rows and information;
+
+2. Table displaying the absolute number of land animals slaughtered by `r selected.countries`, and EU between 1961 and 2021;
+
+3. Figure illustrating the variation in percentage of land animals slaughtered for meat from 1961 to 2021.
+
+You can play with the example below by manipulating the selection boxes, clicking rows in the data table, and playing with the selection button in the figure.
+
+
+```{r plot, include=T}
+
+data <- data |> group_by(country) |>
+  mutate(pct_no_animals = (`no. animals slaughtered`/first(`no. animals slaughtered`) * 100)) |>
+  ungroup() |>
+  mutate(pct_no_animals = round(pct_no_animals,2))
+
+
+plot <- data |> ggplot(aes(x=year, y=pct_no_animals, group=country, col=country)) +
+                geom_line(alpha = 1, linewidth = 1.5) +
+                xlab('Year') +
+                ylab('% land animals slaughtered') +
+                #ggtitle("") +          
+                theme_classic(base_size=18, base_family="serif") +
+                theme(text = element_text(size=18),
+                axis.text.x = element_text(angle=0, hjust=.5, vjust = 0.5, color = "black"),
+                axis.text.y = element_text(color = "black"),
+                plot.title = element_text(hjust = 0.5),
+                plot.subtitle = element_text(hjust = 0.5),
+                legend.position="right") +
+                scale_y_continuous(breaks = seq(0,4500, by=300), limits=c(0,4500), expand = c(0,0)) +
+                scale_x_discrete(breaks = c(1960, 1970, 1980, 1990, 2000, 2010, 2020))
+
+shared_summary <- SharedData$new(data)
+
+country.filter <- filter_select("Country", "Country", shared_summary, ~country)
+year.filter <- filter_select("Year", "Year", shared_summary, ~year)
+
+bscols(widths = c(6,6),
+  list(country.filter,year.filter,
+  datatable(shared_summary, filter = "top", selection = "multiple", class="compact", width="100%", height=500)),
+            ggplotly(plot, width = 600, height = 600, tooltip = "all"))
+```
+
+# Conclusions
+
+## Animal welfare
+
+Although this article is about data science skills, we can't close our eyes to the enormous amount of land animals slaughtered for meat every year worldwide!
+
+Only Brazil, China, USA, and EU slaughter around 37 billion land animals for meat!
+
+Additionally, the evolution in the number of land animals slaughtered for meat between 1961 and 2021 is also impressive, especially in Brazil and China with increases of 4254% and 2730%, respectively.
+
+These sizable figures indicate substantial opportunities to conduct research and improve animal welfare and health!
+
+## Stats
+
+If you reached this point, you learned web scraping, data loading, handling and processing, and creating a interactive table and plot using the R library crosstalk. Congrats!
+
+Crosstalk is excellent for creating synchronized and interactive HTML widgets.
+
+Similar to standard HTML widgets, Crosstalk operates independently of Shiny or any additional R runtime dependencies.
+
+This independence allows you to employ it either in isolation or in conjunction with R Markdown for producing static HTML documents that are easily hostable on various platforms like Amazon S3, GitHub, or RPubs.
+
+Nevertheless, it's intentionally built to seamlessly integrate with Shiny applications, enabling the fusion of Crosstalk widget interactions with an array of elements including base plots, ggplot2, and the full spectrum of Shiny functionalities.
+
+See you and enjoy coding!
