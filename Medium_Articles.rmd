@@ -1,7 +1,7 @@
 ---
 title: "List of articles posted on Medium (https://medium.com/@amorimfranchi)"
 author: "Guilherme Franchi"
-date: "last update - November 22, 2023"
+date: "`r Sys.Date()`"
 output:
   bookdown::word_document2:
     fig_caption: yes
@@ -322,5 +322,12 @@ rm(data, d)
 
 \newpage
 
-# Nov 29, 2023 - 
+# Nov 30, 2023 - "Visualizing the number of animals slaughtered for meat in the top 4 world's largest meat producers using the R library crosstalk"
+
+The Rmd. file containing the algorithm is placed in the repository "MediumBlog".
+
+\newpage
+
+# Dec XX, 2023
+
 
