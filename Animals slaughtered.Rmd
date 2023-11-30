@@ -58,7 +58,7 @@ The main advantages of crosstalk are:
 
 * JavaScript-Based Requirements: crosstalk is useful when working within a JavaScript-focused environment or when needing specific interactions that are more efficiently handled with JavaScript.
 
-In today's post, we will practice the R library crosstalk using a dataset on number of animals slaughtered for meat worldwide retrieved from the website "Our World in Data" (https://ourworldindata.org/animal-welfare). For the sake of simplification, we will retain the top 3 world's largest meat producers in 2021 and European Union.
+In today's post, we will practice the R library crosstalk using a dataset on number of animals slaughtered for meat worldwide retrieved from the website "Our World in Data" (https://ourworldindata.org/animal-welfare). For the sake of simplification, we will retain the top 3 world's largest meat producers in 2021.
 
 Therefore, we will practice the following skills:
 
@@ -85,16 +85,6 @@ country.table
 
 selected.countries <- unique(country.table$Country)[1:3]
 
-#EU members
-eu.wiki.url <- 'https://en.wikipedia.org/wiki/Member_state_of_the_European_Union'
-
-eu.table <- read_html(eu.wiki.url) |> html_table()
-
-eu.country.table <- eu.table[[3]]
-eu.country.table
-
-eu.members <- unique(eu.country.table$Country)[1:27]
-
 
 ```
 
@@ -108,18 +98,12 @@ We then just need to select the table we need.
 
 Thereafter, we can retrieve the names of the top 3 meat producers (`r selected.countries`) and include them into a vector, which will be used to filter the observations we will use further in this exercise.
 
-Additionally, the European Union can be added as a block country and list of current European Union members can be found here: https://en.wikipedia.org/wiki/Member_state_of_the_European_Union.
-
-The process of retrieving the table and creating a vector with the 27 member states (`r eu.members`) follows the same steps described above for the top 3 meat producers.
-
 
 ## Data loading, preparation, and summary
 
 The data on the number of land animals slaughtered for meat per year between 1961 and 2021 was previously downloaded as csv. format from the "Our World in Data" website (https://ourworldindata.org/animal-welfare).
 
-After uploading it in R, the observations from the 3 selected countries were filtered out in one sub-dataset and the EU member states were filtered out in another sub-dataset and observations across countries were summed per year.
-
-Thereafter, both sub-datasets were merged into one dataset "data" with 244 yearly observations.
+After uploading it in R, the observations from the 3 selected countries were filtered out in one sub-dataset with 183 yearly observations.
 
 Then, the yearly average number of land animals slaughtered was calculated using the R library skimr and displayed in Table \@ref(tab:summary-table) using the R library flextable.
 
@@ -137,19 +121,10 @@ d1 <- d1 |> mutate(country=as.factor(country),
                    year=as.factor(year),
                 `no. animals slaughtered`=as.numeric(`no. animals slaughtered`))
 
-# EU members
-d2 <- d %>% filter(Entity %in% eu.members)
-colnames(d2) <- c("country","code","year","no. animals slaughtered")
-d2 <- d2 |> group_by(year) |> dplyr::summarise(`no. animals slaughtered` = sum(`no. animals slaughtered`)) |> mutate(country=as.factor("European Union"),
-                          code=as.factor("EU"))
-
-#Merging sub-datasets
-data <- rbind(d1, d2)
-
 ```
 
 ```{r summary-table, include=T}
-summary <- data |> group_by(country) |> skim(where(is.numeric))
+summary <- d1 |> group_by(country) |> skim(where(is.numeric))
 
 summary <- summary[,c(3, 6)]
 
@@ -165,7 +140,7 @@ summary.table <- flextable(summary) %>%
   bg(part="body", i=c(1,3), bg="grey80") %>%
   align(align = "center", part = "header") %>%
   align(align = "center", part = "body") %>%
-  set_caption(caption = "Yearly average number of animal slaughtered in the world's top 4 meat producers between 1961 and 2021.")
+  set_caption(caption = "Yearly average number of land animals slaughtered in the world's top 3 meat producers between 1961 and 2021.")
 
 summary.table
 ```
@@ -176,7 +151,7 @@ Our crosstalk app contains:
 
 1. Selection boxes for "country" and "year" helping you filtering desired rows and information;
 
-2. Table displaying the absolute number of land animals slaughtered by `r selected.countries`, and EU between 1961 and 2021;
+2. Table displaying the absolute number of land animals slaughtered by `r selected.countries` between 1961 and 2021;
 
 3. Figure illustrating the variation in percentage of land animals slaughtered for meat from 1961 to 2021.
 
@@ -185,7 +160,7 @@ You can play with the example below by manipulating the selection boxes, clickin
 
 ```{r plot, include=T}
 
-data <- data |> group_by(country) |>
+data <- d1 |> group_by(country) |>
   mutate(pct_no_animals = (`no. animals slaughtered`/first(`no. animals slaughtered`) * 100)) |>
   ungroup() |>
   mutate(pct_no_animals = round(pct_no_animals,2))
@@ -194,7 +169,7 @@ data <- data |> group_by(country) |>
 plot <- data |> ggplot(aes(x=year, y=pct_no_animals, group=country, col=country)) +
                 geom_line(alpha = 1, linewidth = 1.5) +
                 xlab('Year') +
-                ylab('% land animals slaughtered') +
+                ylab('Relative change in land animals slaughtered, in %') +
                 #ggtitle("") +          
                 theme_classic(base_size=18, base_family="serif") +
                 theme(text = element_text(size=18),
@@ -223,7 +198,7 @@ bscols(widths = c(6,6),
 
 Although this article is about data science skills, we can't close our eyes to the enormous amount of land animals slaughtered for meat every year worldwide!
 
-Only Brazil, China, USA, and EU slaughter around 37 billion land animals for meat!
+Only Brazil, China, USA slaughtered over 32 billion land animals for meat!
 
 Additionally, the evolution in the number of land animals slaughtered for meat between 1961 and 2021 is also impressive, especially in Brazil and China with increases of 4254% and 2730%, respectively.
 
