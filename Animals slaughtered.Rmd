@@ -198,6 +198,7 @@ bscols(widths = c(6,6),
             ggplotly(plot, width = 600, height = 600, tooltip = "all"))
 ```
 
+
 # Conclusions
 
 ## Animal welfare
@@ -210,9 +211,10 @@ Additionally, the evolution in the number of land animals slaughtered for meat b
 
 These sizable figures indicate substantial opportunities to conduct research and improve animal welfare and health!
 
+
 ## Stats
 
-If you reached this point, you learned web scraping, data loading, handling and processing, and creating a interactive table and plot using the R library crosstalk. Congrats!
+If you reached this point, you learned web scraping, data loading, handling and processing, and creating a interactive table and plot using the R library crosstalk. Congratulations!
 
 Crosstalk is excellent for creating synchronized and interactive HTML widgets.
 
@@ -220,6 +222,6 @@ Similar to standard HTML widgets, Crosstalk operates independently of Shiny or a
 
 This independence allows you to employ it either in isolation or in conjunction with R Markdown for producing static HTML documents that are easily hostable on various platforms like Amazon S3, GitHub, or RPubs.
 
-Nevertheless, it's intentionally built to seamlessly integrate with Shiny applications, enabling the fusion of Crosstalk widget interactions with an array of elements including base plots, ggplot2, and the full spectrum of Shiny functionalities.
+Nevertheless, it is intentionally built to seamlessly integrate with Shiny applications, enabling the fusion of Crosstalk widget interactions with an array of elements including base plots, ggplot2, and the full spectrum of Shiny functionalities.
 
-See you and enjoy coding!
+Enjoy coding and see you on Medium.com (@amorimfranchi)!
