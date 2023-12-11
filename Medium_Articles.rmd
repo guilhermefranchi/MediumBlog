@@ -324,7 +324,7 @@ rm(data, d)
 
 # Nov 30, 2023 - "Visualizing the number of animals slaughtered for meat in the top 4 world's largest meat producers using the R library crosstalk"
 
-The Rmd. file containing the algorithm is placed in the repository "MediumBlog".
+The Rmd. file "Animals slaughtered" containing the algorithm is placed in the repository "MediumBlog".
 
 \newpage
 
