@@ -328,6 +328,180 @@ The Rmd. file "Animals slaughtered" containing the algorithm is placed in the re
 
 \newpage
 
-# Dec XX, 2023
+# Dec 11, 2023 - "Statistical tests to spot potential data outliers in R"
+
+## What is a data outlier and its impact on statistical analysis and data interpretation?
+An outlier in a dataset refers to a data point or observation that significantly deviates from other observations in the sample.
+
+An outlier can also be seen as an observation that lies far away from the other values, which can sometimes skew statistical analyses and data interpretation.
+
+Outliers can occur due to various reasons such as measurement and data entry errors, experimental variability, or they might even represent a genuine anomaly or rare event within the data.
+
+An outlier often signifies problematic data, such as potential errors in coding or errors in experimental execution.
+
+Should it be established that an outlier indeed stems from an error, it is advisable to remove or rectify the aberrant value in the analysis.
+
+However, determining the validity of an outlier can sometimes be challenging.
+
+Outliers might emerge from random fluctuations or reveal scientifically noteworthy insights.
+
+Consequently, outright deletion of outlier observations is not advised.
+
+Nonetheless, when substantial outliers are present, resorting to more robust statistical methods is suggested.
+
+Detecting outliers is important in data analysis as they can impact the accuracy of statistical models or conclusions drawn from the data.
+
+Data outlier detection can be performed in several ways, including graphical analysis, descriptive statistics, and formal test techniques.
+
+In today's posts I will cover some of the most used hypothesis tests to spot outliers using R.
+
+It is worth noting that the tests demonstrated below are not supposed to replace other outlier detection techniques.
+
+These formal statistical tests must be used in combination with graphical analysis and prior experience with the type of data and context in which the data was collected.
+
+
+## Example dataset and visualization of potential outliers
+
+In this article, we will use the dataset "saunders.maize.uniformity", regarding uniformity trial of maize in South Africa, stored in the R library agridat v.1.22 (Wright, 2023).
+
+We will use the variable "yield", which refers to yield per plot, in pounds, on the year of 1930.
+
+```{r data-load-Dec11, include=T}
+install.packages(c("agridat","tidyr","tidyverse","dplyr"))
+
+library("agridat")
+library("tidyr")
+library("tidyverse")
+library("dplyr")
+
+data <- agridat::saunders.maize.uniformity
+
+data <- data |> 
+        mutate(year=as.factor(year),
+               yield=as.numeric(yield)) |>
+        filter(year=="1930")
+
+head(data,10)
+
+hist(data$yield)
+```
+
+
+Boxplots are useful graphical tools to detect potential outliers. Figure \@ref(fig:boxplot) illustrates a boxplot of yield per plot on each experimental year. 
+
+(ref:boxplot) Boxplot of yield per plot in 1930. The boxplot displays five summary statistics measures: minimum, median, first and third quartiles and maximum. Any observation considered as outlier is found outside the interval between quartiles, aka interquartile range.
+
+```{r boxplot, include=T, fig.cap="(ref:boxplot)"}
+data |> ggplot(aes(x = "", y = yield)) +
+  geom_boxplot(fill = "#0c4c8a") +
+  xlab(' ') +
+  ylab('Yield per plot, in pounds') +
+  theme_minimal(base_size=18, base_family="serif")
+```
+
+
+```{r individual-outliers, include=T}
+out <- boxplot.stats(data$yield)$out
+out_ind <- which(data$yield %in% c(out))
+data[out_ind, ]
+```
+
+It is also possible to extract the values of the potential outliers thanks to the *boxplot.stats()$out* function.
+In this case, these observations were considered outliers according to the interquartile range criterion: `r out`.
+With the function *which()* we can extract the row numbers corresponding to these outliers: `r out_ind`.
+
+
+## Formal outlier spotting tests
+Before presenting the tests and trying their codes in R, we will limit our list to tests used for normally distributed data and detection of more than one observation.
+
+Therefore, Dixon's and Grubb's test, which test whether a single low or high value is an outlier at a time, will not be covered.
+
+Moreover, this list is not exhaustive as a large number of outlier tests can be found in the literature.
+
+
+### Rosner's generalized extreme Studentized deviate Test
+The Rosner's generalized extreme Studentized deviate (ESD) test is an extension of the Grubbs' test for detecting one or more outliers in a univariate data set.
+
+The steps involved in Rosner's ESD test:
+
+1. Identify potential outliers: The test aims to identify potential outliers by iteratively removing the suspected maximum value (or minimum value, depending on the direction of the test) from the dataset. It calculates the extreme studentized deviate for each potential outlier.
+
+2. Calculate the Extreme Studentized Deviate: The extreme studentized deviate is essentially a measure of how extreme a data point is compared to the rest of the data. It is calculated as the difference between the suspected outlier and the sample mean, divided by the sample standard deviation. This is then divided by an estimate of the standard deviation of the suspected outlier. This gives a measure of how many standard deviations away from the mean the suspected outlier is.
+
+3. Compare with critical values: The extreme studentized deviate values obtained are compared against critical values from the ESD distribution table based on the desired significance level and the number of data points in the dataset. If the calculated extreme studentized deviate exceeds the critical value, the suspected outlier is considered significant and removed from the dataset.
+
+4. Iterative process: The process is repeated until either no more outliers are detected or until the number of outliers detected reaches a predetermined maximum number.
+
+In addition to normal distribution, the Rosner's ESD test assumes that the variance within the dataset is constant.
+
+Below, you can see the R script to perform the Rosner's ESD test.
+
+```{r rosner-test}
+install.packages(c("EnvStats"))
+
+test <- EnvStats::rosnerTest(data$yield, k = 16, alpha = 0.05) # k = 16, which is the number of suspected outliers from interquartile range criterion.
+
+test$all.stats
+```
+
+Based on the Rosner's test, only one observation was deemed outlier, which was the observation 456 with a value of 19.9.
+
+### Z-score
+Z-scores serve as a measure of how atypical an observation is within a dataset that adheres to a normal distribution.
+
+They represent the number of standard deviations a particular value deviates from the mean.
+
+For instance, a Z-score of 2 signifies that an observation lies two standard deviations above the average, whereas a Z-score of -2 indicates it is positioned two standard deviations below the mean.
+
+A Z-score of zero denotes a value that aligns precisely with the mean.
+
+The further away an observation’s Z-score is from zero, the more unusual it is.
+
+A standard cut-off value for finding outliers are Z-scores of +/-3 or further from zero.
+
+```{r z-score, include=T}
+data$z_yield <- scale(data$yield)
+hist(data$z_yield)
+
+z.score.ind <- which(data$z_yield < -3 | data$z_yield > 3)
+data[z.score.ind,]
+```
+
+Using the Z-score methods, the row numbers indicating likely outliers were: `r z.score.ind`.
+
+## Discussion of results
+Z-scores and Rosner's ESD test are both used for outlier detection but operate in distinct ways.
+
+Z-score: It's a measure that describes the position of a data point within a normal distribution in terms of standard deviations from the mean. It's calculated for individual data points and helps in understanding how far a particular value deviates from the mean. Z-scores are not explicitly designed for outlier detection but can be used to identify extreme values. They assess each data point's deviation from the mean based on the standard deviation of the entire dataset.
+
+Rosner's ESD Test: This test is explicitly designed for outlier detection. It aims to detect potential outliers by iteratively removing suspected extreme values from the dataset. It calculates extreme studentized deviates, measuring how many standard deviations an individual value deviates from the mean, but the calculation is based on the sample mean and standard deviation. The test involves sequentially identifying and removing suspected outliers until no more are found, or until a predetermined maximum number is reached.
+
+The main difference lies in their methodologies:
+
+- Z-scores assess individual data points' deviations from the mean using the standard deviation of the entire dataset.
+- Rosner's ESD test iteratively evaluates potential outliers by comparing their deviation from the sample mean and standard deviation, removing suspected outliers sequentially.
+
+These methods can provide different results because they operate based on different principles and approaches. Additionally, Rosner's ESD test involves an iterative process that considers each potential outlier's influence on subsequent calculations, while Z-scores analyze individual data points independently.
+
+The outcomes might vary due to the specific nature of the methods and their sensitivity to different types of outliers or extreme values. Also, the application and interpretation of results from these methods depend on the context and assumptions of the data being analyzed.
+
+## Conclusions
+Numerous methods exist to spot outliers, but leveraging deep knowledge of variables proves vital.
+
+Visual tools like boxplots and histograms, along with data sorting, often reveal potential outliers swiftly.
+
+Most statistical tests for outlier detection rely on normal distribution assumptions and can be sensitive to outliers, therefore, should not be used solely.
+
+Instead, I believe in a knowledgeable analyst's ability to spot unusual values and formal statistical tests should be used as complement.
+
+In fact, investigating potential outliers in a sample is just the initial step.
+
+Remember: Not every outlier warrants deletion; some hold valuable insights. Outliers often offer crucial information about the subject and data collection methods. Understanding their occurrence and potential recurrence as a natural part of the process is essential.
+
+See you in the next post!
+
+\newpage
+
+# Dec XX, 2023 - "XXX"
 
 
