@@ -328,7 +328,7 @@ The Rmd. file "Animals slaughtered" containing the algorithm is placed in the re
 
 \newpage
 
-# Dec 11, 2023 - "Statistical tests to spot potential data outliers in R"
+# Dec 12, 2023 - "Statistical tests to spot potential data outliers in R"
 
 ## What is a data outlier and its impact on statistical analysis and data interpretation?
 An outlier in a dataset refers to a data point or observation that significantly deviates from other observations in the sample, which can sometimes skew statistical analyses and data interpretation.
