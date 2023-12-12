@@ -328,7 +328,7 @@ The Rmd. file "Animals slaughtered" containing the algorithm is placed in the re
 
 \newpage
 
-# Dec 12, 2023 - "Statistical tests to spot potential data outliers in R"
+# Dec 12, 2023 - "Spotting data outliers in R"
 
 ## What is a data outlier and its impact on statistical analysis and data interpretation?
 An outlier in a dataset refers to a data point or observation that significantly deviates from other observations in the sample, which can sometimes skew statistical analyses and data interpretation.
@@ -351,19 +351,16 @@ Detecting outliers is important in data analysis as they can impact the accuracy
 
 Data outlier detection can be performed in several ways, including graphical analysis, descriptive statistics, and formal test techniques.
 
-In today's post I will cover two hypothesis tests to spot several outliers simultaneously using R.
-
-It is worth noting that the tests demonstrated below are not supposed to replace other outlier detection techniques.
-
-These formal statistical tests must be used in combination with graphical and descriptive analyses and prior experience with the type of data and context in which the data was collected.
+In today's post I will cover three ways to spot several outliers using R. Therefore, Dixon's test and Grubb's test, which examine whether a *single* low or high value is an outlier at a time, will not be covered.
 
 
 ## Example dataset and visualization of potential outliers
+
 In this article, we will use the dataset "saunders.maize.uniformity", regarding uniformity trial of maize in South Africa, stored in the R library agridat v.1.22 (Wright, 2023).
 
 We will use the variable "yield" (yield per plot, in pounds) on the year of 1930.
 
-```{r data-load-Dec11, include=T}
+```{r data-load-Dec12, include=T}
 install.packages(c("agridat","tidyr","tidyverse","dplyr"))
 
 library("agridat")
@@ -379,11 +376,15 @@ data <- data |>
         filter(year=="1930")
 
 head(data,10)
+```
 
+
+```{r histogram, include=T}
 hist(data$yield)
 ```
 
 
+## Boxplot inspection and interquartile range
 Boxplots are useful graphical tools to detect potential outliers. Figure \@ref(fig:boxplot) illustrates a boxplot of yield per plot on each experimental year. 
 
 (ref:boxplot) Boxplot of yield per plot in 1930. The boxplot displays five summary statistics measures: minimum, median, first and third quartiles and maximum.
@@ -414,12 +415,7 @@ In this example, *16* observations (`r out`) were considered outliers according 
 With the function *which()* we can extract the row numbers corresponding to these outliers: `r out_ind`.
 
 
-## Formal outlier spotting tests
-The two formal outlier detection tests presented below assume that our variable of interest follows a normal distribution.
-
-Furthermore, these two tests assume the presence of more than one potential outlier. Therefore, Dixon's test and Grubb's test, which examine whether a *single* low or high value is an outlier at a time, will not be covered.
-
-### Z-score
+## Z-score
 Z-scores serve as a measure of how atypical an observation is within a dataset that adheres to a normal distribution.
 
 They represent the number of standard deviations a particular value deviates from the mean.
@@ -442,7 +438,8 @@ data[z.score.ind,]
 
 Using the Z-score methods, 4 observations were considered outliers and their row numbers were: `r z.score.ind`.
 
-### Rosner's generalized extreme Studentized deviate (ESD) Test
+
+## Rosner's generalized extreme Studentized deviate (ESD) Test
 The Rosner's generalized ESD test is an extension of the Grubbs' test for detecting several outliers in a univariate data set.
 
 The steps involved in Rosner's ESD test:
@@ -455,7 +452,7 @@ The steps involved in Rosner's ESD test:
 
 4. Iterative process: The process is repeated until either no more outliers are detected or until the number of outliers detected reaches a predetermined maximum number.
 
-In addition to normal distribution, the Rosner's ESD test assumes that the variance within the dataset is constant.
+In addition to normal distribution assumption, the Rosner's ESD test assumes that the variance within the dataset is constant.
 
 Below, you can see the R script to perform the Rosner's ESD test.
 
@@ -493,7 +490,7 @@ Visual tools like boxplots and histograms, along with data sorting, often reveal
 
 Most statistical tests for outlier detection rely on normal distribution assumptions and can be sensitive to outliers, therefore, should not be used alone.
 
-Instead, prior experience with the data's nature and collection process knowledgeable analyst's ability to spot unusual values and formal statistical tests should walk together.
+Instead, prior experience with the data's nature and collection process as well as a trained ability to spot unusual values and use formal statistical tests should walk together.
 
 Once again, not every outlier warrants deletion; some hold valuable insights. Outliers often offer crucial information about the subject and data collection methods. Understanding their occurrence and potential recurrence as a natural part of the process is essential.
 
