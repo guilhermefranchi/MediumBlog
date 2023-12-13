@@ -3,7 +3,7 @@ title: "List of articles posted on Medium (https://medium.com/@amorimfranchi)"
 author: "Guilherme Franchi"
 date: "`r Sys.Date()`"
 output:
-  bookdown::word_document2:
+  bookdown::html_document2:
     fig_caption: yes
     section_number: yes
     number_sections: yes
@@ -361,12 +361,13 @@ In this article, we will use the dataset "saunders.maize.uniformity", regarding 
 We will use the variable "yield" (yield per plot, in pounds) on the year of 1930.
 
 ```{r data-load-Dec12, include=T}
-install.packages(c("agridat","tidyr","tidyverse","dplyr"))
+install.packages(c("agridat","tidyr","tidyverse","dplyr","ggplot2"))
 
 library("agridat")
 library("tidyr")
 library("tidyverse")
 library("dplyr")
+library("ggplot2")
 
 data <- agridat::saunders.maize.uniformity
 
