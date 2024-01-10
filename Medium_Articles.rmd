@@ -522,15 +522,12 @@ library(tidyr)
 library(ggtext)
 library(ggplot2)
 library(glue)
-library(ggtext)
-library(showtext)
-library(showtext)
 library(patchwork)
 
 ```
 
 ```{r data-load, include=T}
-setwd("C:/Users/au588902/Dropbox/Medium/MediumBlog")
+setwd("C:/Users/au588902/Dropbox/Medium/MediumBlog/datasets")
 
 d <- read_csv("average-farm-size.csv") |>
      mutate(country=as.factor(Entity),
@@ -542,8 +539,7 @@ d <- read_csv("average-farm-size.csv") |>
 ```
 
 ```{r plot-base, include=T}
-
-my_theme <- theme_minimal(base_size = 16, base_family = 'serif') +
+my_theme <- theme_minimal(base_size = 12, base_family = 'serif') +
   theme(
     legend.position = 'none',
     plot.title.position = 'plot',
@@ -556,7 +552,7 @@ color_palette <- c("#0072B2", "#D55E00")
 names(color_palette) <- c(1960, 2000)
 
 title_text <- glue(
-  "Comparison of average fame size between <span style = 'color:{color_palette['1960']}'>1960</span> and <span style = 'color:{color_palette['2000']}'>2000</span>")
+  "Comparison of average farm size between <span style = 'color:{color_palette['1960']}'>1960</span> and <span style = 'color:{color_palette['2000']}'>2000</span>")
 
 ```
 
@@ -697,4 +693,161 @@ See you next time!
 
 \newpage
 
+# Jan 11, 2024 - "Comparing economic relevance of tourism among world regions using bump charts in R"
+
+Tourism plays a significant role in the global economy, contributing to job creation, economic growth, and international cooperation.
+
+Let's have a look at the share of tourism in total Gross Domestic Product (GDP) among several world regions between 2016 and 2020 using data retrieved from *Our World in Data* (Herre et al., 2023; https://ourworldindata.org/tourism).
+
+```{r libraries-jan09, include=T}
+#install.packages(c("xxx"))
+
+library(readr)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(glue)
+library(ggplot2)
+library(ggtext)
+library(ggrepel)
+library(ggbump)
+library(patchwork)
+
+```
+
+
+```{r data-processing, include=T}
+setwd("C:/Users/au588902/Dropbox/Medium/MediumBlog/datasets")
+
+d <- readr::read_csv('tourism-gdp-proportion-of-total-gdp.csv') |>
+  filter(!Year<2016 & !Year==2021) |>
+  filter(!Entity=="Northern America and Europe") |>
+  mutate(share = as.numeric(`Tourism GDP as a proportion of Total`))
+
+d <- d[!complete.cases(d),] #selecting world regions, excluding single countries
+
+pal <- c(
+  "#5D3A9B","#D41159", "#E69F00", "#009E73", "#0072B2", "#CC79A7", "#999999", "#D55E00","black")
+
+current <- d %>%
+  group_by(Entity) %>% 
+  slice(which.max(Year)) %>% 
+  ungroup()
+
+title_text <- glue(
+  "Share of Tourism in total GDP between 2016 and 2020, in %")
+
+```
+
+(ref:linechart) Line chart illustrating the share (in %) of tourism in total GDP across world regions between 2016 and 2020.
+
+```{r linechart, include=T, fig.cap="(ref:linechart)"}
+ggplot(d, aes(x = Year,
+           y = share, group = Entity)) + 
+  geom_point(aes(color = Entity)) + 
+  geom_line(aes(color = Entity), size = 2, alpha = 0.8) +
+  geom_text_repel(data = current, aes(label = Entity, color = Entity), size = 3, hjust = -2, vjust = 1) +
+  scale_color_manual(values = pal) +
+  xlim(2016, 2020.5) + 
+  labs(x = element_blank(),
+       y = element_blank(),
+       title = title_text,
+       caption = 'OurWorldInData.org/tourism') +
+  theme_minimal(base_size = 16, base_family = 'serif') +
+  theme(panel.background = element_rect(fill = "white"),
+        legend.position = "none")
+
+```
+
+The line chart (Fig. \@ref(fig:linechart)) shows us that the economic relevance of tourism was the highest in Oceania ex-Australia/New Zealand throughout the sampled period.
+
+Meanwhile, we can see that, except for "Central and Southern Asia" region, all remaining regions exchanged positions in the rank of economic importance of tourism at specific time points.
+
+Although the line chart displays the actual shares of each region in each year, if one is interested in knowing the ranking position of these regions, the line chart is not so helpful as it can become cluttered and difficult to read.
+
+Therefore, a great alternative to visualize different positions over time is to plot a *bump chart*.
+
+A bump chart, also known as a slope chart or a rank chart, is a type of data visualization tool used to track the changes in ranking or position of different entities over time.
+
+The chart consists of lines that connect the ranks of individual items (like world regions in this case) across different time periods. Each line represents an entity, and the movement of the line illustrates how its ranking changes over time. The steeper the slope of the line, the more significant the change in rank.
+
+Bump charts are commonly used in sports analytics, business analytics, and other fields where tracking changes in ranking or position is essential for analysis.
+
+Check out below how to transform this line chart into a bump chart in R and better see the ranking of world regions regarding their share of tourism in total GDP.
+
+(ref:bumpchart) Bump chart illustrating the ranking position of each world region in terms of share of tourism in total GDP between 2016 and 2020.
+
+```{r bumpchart, include=T, fig.cap="(ref:bumpchart)"}
+rank_by_year <- d |> 
+  mutate(rank = row_number(desc(share)), .by = Year)
+
+max_rank <- 9
+
+todays_top <- rank_by_year %>% 
+  filter(Year == 2020, rank <= max_rank) %>% 
+  pull(Entity)
+
+names(pal) <- todays_top
+description_color <- 'grey30'
+
+bump_chart <- rank_by_year |> 
+  ggplot(aes(Year, rank, col = Entity)) + 
+  
+  geom_point(shape = '|', stroke = 9) +
+  
+  geom_bump(linewidth = 2) +
+  
+  geom_text(data = rank_by_year |> filter(Year == 2016),
+    aes(label = Entity),
+    hjust = 1,
+    nudge_x = -0.1,
+    size = 3.9,
+    fontface = 'bold',
+    family = 'serif') +
+  
+  geom_text(data = rank_by_year |> filter(Year == 2020),
+    aes(label = rank),
+    hjust = 0,
+    nudge_x = 0.1,
+    size = 3.9,
+    fontface = 'bold',
+    family = 'serif') +
+  
+  annotate('text',
+    x = seq(2016, 2020, 1),
+    y = 0.5,
+    label = seq(2016, 2020, 1),
+    hjust = 0.5,
+    vjust = 1,
+    size = 5,
+    fontface = 'bold',
+    color = description_color,
+    family = 'serif') +
+  
+  scale_color_manual(values = pal) +
+  
+  coord_cartesian(xlim = c(2012.5, 2020.9), ylim = c(9.5, 0.25), expand = F) +
+  
+  theme_void(base_size = 13, base_family = 'serif') +
+  
+  theme(legend.position = 'none',
+    plot.background = element_rect(fill = 'grey95', color = NA),
+    plot.margin = margin(t=1, r=1, b=1, l=3, "mm"),
+    text = element_text(color = description_color),
+    plot.title = element_text(face = 'bold', family = 'serif', size = rel(1.3))) +
+  
+  labs(title = 'Share of Tourism in total Gross Domestic Product (GDP)',
+    subtitle = 'Rank by GDP from tourism includes tourism industries and other industries that directly serve visitors.',
+    caption = 'OurWorldInData.org/tourism')
+
+bump_chart
+```
+
+Here we go, the bump chart (Fig. \@ref(fig:bumpchart)) shows us more clearly the rank of world regions regarding how economically relevant tourism was between 2016 and 2020.
+
+Thanks for reading it and see you next time!
+
+Gui
+
+\newpage
 
