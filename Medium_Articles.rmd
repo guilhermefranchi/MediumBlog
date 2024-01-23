@@ -851,3 +851,126 @@ Gui
 
 \newpage
 
+# Jan 16, 2024 - "Quickly compare data sets in R"
+
+Dealing with vast data sets from different sources is an integral part of a statistical programmer or data scientist's work routine.
+
+In this regard, the importance of comparing data sets cannot be overstated.
+
+Data sets serve as foundation structures in popular programming languages providing a systematic and organized way to store and manipulate data.
+
+Comparing data sets plays a pivotal role in ensuring data quality, identifying patterns, and making informed decisions based on robust analyses.
+
+By comparing data sets, data scientists can quickly pinpoint discrepancies between data sets, allowing for thorough data cleaning and pre-processing.
+
+This process is crucial for maintaining data integrity, enhancing the reliability of subsequent analyses, and ensuring that insights drawn from the data accurately reflect the underlying reality.
+
+Furthermore, comparing data sets is relevant merging and integrating data from multiple sources.
+
+By comparing data sets based on key identifiers, data scientists can effectively merge data sets, ensuring that information is integrated accurately.
+
+This process is fundamental in creating comprehensive data sets that capture a holistic view of the phenomena under investigation.
+
+In today's post we will explore the R library *arsenal* (v.3.6.3; Heizen et al., 2021) for easy, quick comparison of two data sets resultant of merging two data sources in different ways.
+
+```{r libraries-jan16, include=T}
+#install.packages(c("xxx"))
+
+library(readxl)
+library(dplyr)
+library(arsenal)
+```
+
+In this post, we initially use two data sets of a randomized clinical trial.
+
+The *ref* data set refers to information of patients (variable: SUBJID) prior to random assignment to one of two treatments. Each patient has one single row of data.
+
+The second data set, *lab*, refers to laboratory analysis information of each patient over several sampling points.
+
+```{r data-loading-jan16, include=T}
+setwd("C:/Users/au588902/Dropbox/Medium/MediumBlog/datasets")
+
+ref <- readxl::read_excel("clinical_data.xlsx", sheet = "ADSL") #N = 257 observations
+
+lab <- readxl::read_excel("clinical_data.xlsx", sheet = "ADLB") #N = 2439 observations
+```
+
+For the purpose of demonstrating the use of the arsenal R library, we will left-join (R library *dplyr*) the two data sets in two different ways, the right way using the *ref* data set as our reference ('x') and the wrong way using the *lab* data set as our reference ('x').
+
+OBS.: another way of creating two different merged data sets would be using "left_join" and "right_join" without changing the order of the data sets in the function.
+
+```{r right-data-jan16, include=T}
+
+right.dataset <- dplyr::left_join(ref, lab, by = "SUBJID")  #N = 2422 observations
+head(right.dataset,5)
+
+```
+
+The *right.dataset* above contains 2422 observations.
+
+```{r wrong-data-jan16, include=T}
+
+wrong.dataset <- dplyr::left_join(lab, ref, by = "SUBJID")  #N = 2439 observations
+head(wrong.dataset,5)
+```
+
+The *wrong.dataset* above contains 2439 observations.
+
+It is pretty clear that something went wrong when we changed the order of data sets in the formula, as the merged data sets did not share 17 observations (rows).
+
+To check this difference in detail, let's use the function *comparedf* from the R library *arsenal*.
+
+The output below shows us that 17 observations (rows) are different between the two merged data sets across all variables. In fact, two patients (S001054 and S051018) were present in the sampling period, but had no prior information before the start of the trial.
+
+
+```{r comparing-datasets-jan16, include=T}
+
+comparison <- arsenal::comparedf(right.dataset, wrong.dataset, by = NULL)
+```
+
+```{r print-comparison-jan16, include=T}
+
+print(comparison)
+```
+
+```{r summary-comparison-jan16, include=T}
+
+summary(comparison)
+```
+
+
+When looking at the differences between merged data sets by a given variable, in this case 'patient', we observe that the merged data sets did not share 23 observations - see output below. In addition to the two patients with no description information prior the sampling period, there were three patients with information who were not present during the sampling period.
+
+
+```{r comparing1-datasets-jan16, include=T}
+
+comparison1 <- arsenal::comparedf(right.dataset, wrong.dataset, by = "SUBJID")
+```
+
+```{r print1-comparison-jan16, include=T}
+
+print(comparison1)
+```
+
+```{r summary1-comparison-jan16, include=T}
+
+summary(comparison1)
+```
+
+
+## Conclusion
+
+From ensuring data quality and integrity to uncovering hidden patterns and facilitating data integration, the comparative analysis of data sets is a fundamental step in the data science workflow.
+
+As the field continues to evolve, the ability to effectively compare and contrast data sets will remain a critical skill, empowering data scientists to extract meaningful insights and drive informed decision-making.
+
+The R library *arsenal* provides a practical insight on discrepancies between data sets and it is a useful tool for daily data science work. Leave me a comment if you know other packages/functions to carry out similar task in R!
+
+Thanks for reading it and see you next time!
+
+Gui
+
+Reference: Heinzen E, Sinnwell J, Atkinson E, Gunderson T, Dougherty G (2021). _arsenal: An Arsenal of 'R' Functions for Large-Scale Statistical Summaries_. R package version 3.6.3, https://CRAN.R-project.org/package=arsenal>.
+
+
+\newpage
